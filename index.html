@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golden Network - Klasik Boxmining Keyfi</title>
+    
+    <!-- Sekme Logosu (Favicon) - Sunucu logosuna ayarlandı -->
+    <link rel="icon" type="image/png" href="swlogo.png">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome (İkonlar) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        body, html {
+            overflow-x: hidden;
+            background-color: #ffffff;
+            scroll-behavior: smooth;
+        }
+
+        /* Üst Sarı Platform */
+        .yellow-platform {
+            position: relative;
+            min-height: 70vh;
+            background: linear-gradient(135deg, #FFD700, #ffb300);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Şeffaf Arkaplan Yazısı */
+        .bg-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 13vw;
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.12);
+            z-index: 2;
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+            letter-spacing: 15px;
+        }
+
+        /* Baloncuklar (Blob) */
+        .blobs-container {
+            position: absolute;
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            width: 100%; 
+            height: 100%; 
+            z-index: 3; 
+            pointer-events: none;
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .blob-white {
+            width: 450px; 
+            height: 450px;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            position: absolute; 
+            transform: translateX(-40%); 
+            filter: blur(40px);
+            border-radius: 50%;
+        }
+        .blob-yellow {
+            width: 450px; 
+            height: 450px;
+            background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, transparent 70%);
+            position: absolute; 
+            transform: translateX(40%); 
+            filter: blur(40px);
+            border-radius: 50%;
+        }
+
+        /* Küçülerek Yok Olan Baloncuklar Sınırlandırılmış Alan */
+        .bubbles-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .bubble {
+            position: absolute;
+            bottom: -50px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            animation: rise infinite ease-in;
+        }
+        @keyframes rise {
+            0% { transform: translateY(0) scale(1); opacity: 0.7; }
+            80% { opacity: 0.4; }
+            100% { transform: translateY(-70vh) scale(0); opacity: 0; }
+        }
+
+        /* Minecraft Piksel Yaprakları */
+        .leaves-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 20;
+            overflow: hidden;
+        }
+        .leaf {
+            position: absolute;
+            top: -30px;
+            width: 24px;
+            height: 24px;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'><path d='M4 2h8v2H4zm-2 2h12v2H2zm0 2h12v2H2zm0 2h12v2H2zm2 2h8v2H4z' fill='%234c7f1a'/><path d='M6 4h4v2H6zm-2 2h2v2H4zm6 0h2v2h-2z' fill='%232d4c07'/><path d='M8 8h2v2H8z' fill='%231b3302'/></svg>");
+            background-size: contain;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg) translateX(0); }
+            33% { transform: translateY(35vh) rotate(120deg) translateX(20px); }
+            66% { transform: translateY(70vh) rotate(240deg) translateX(-20px); }
+            100% { transform: translateY(105vh) rotate(360deg) translateX(10px); }
+        }
+
+        /* Navigasyon Çubuğu */
+        .navbar {
+            position: relative;
+            z-index: 15;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 50px;
+            background: transparent; 
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        .nav-links a {
+            color: rgba(255, 255, 255, 0.85);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.05rem;
+            position: relative;
+            padding-bottom: 8px;
+            transition: color 0.3s ease;
+        }
+        .nav-links a:hover, .nav-links a.active {
+            color: #ffffff;
+        }
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 5px;
+            bottom: 0;
+            left: 0;
+            background-color: #ffffff;
+            border-radius: 4px;
+        }
+
+        /* Giriş Yap / Kayıt Ol Butonları */
+        .auth-buttons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .auth-buttons a {
+            text-decoration: none;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .btn-login {
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.15);
+            border: 2px solid #ffffff;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%; 
+            font-size: 1.2rem;
+        }
+        .btn-login:hover {
+            background: #ffffff;
+            color: #222;
+            transform: scale(1.1);
+        }
+        .btn-register {
+            color: #fff;
+            background: #2e7d32; 
+            padding: 10px 25px;
+            border-radius: 30px; 
+            box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2);
+        }
+        .btn-register:hover {
+            background: #fff;
+            color: #2e7d32;
+            transform: translateY(-3px);
+        }
+
+        /* Hero Alanı */
+        .hero-container {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 40px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            gap: 20px;
+        }
+
+        .info-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #ffffff; 
+            cursor: pointer;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            flex: 1;
+            max-width: 320px;
+        }
+        .info-box:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .info-box h3 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            word-break: break-all;
+        }
+        .info-box i {
+            font-size: 2.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .mc-box { text-align: left; justify-content: flex-start; margin-top: 60px; }
+        .discord-box { text-align: right; justify-content: flex-end; flex-direction: row-reverse; margin-top: 60px; }
+
+        .flip-text-container { perspective: 1000px; display: block; margin-top: 4px; }
+        .flip-text {
+            font-size: 0.95rem;
+            color: #ffffff;
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        /* Logo Ayarı */
+        .logo-container {
+            position: relative;
+            z-index: 999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: -90px;
+        }
+        .logo-container img {
+            width: 240px; 
+            height: auto;
+            filter: drop-shadow(0 12px 30px rgba(0,0,0,0.3));
+            transition: transform 0.4s ease, filter 0.4s ease;
+        }
+        .logo-container img:hover {
+            transform: scale(1.08);
+            filter: drop-shadow(0 15px 35px rgba(0,0,0,0.4));
+        }
+
+        /* Alt Beyaz Bölüm */
+        .white-layer {
+            background: #ffffff;
+            padding: 140px 20px 60px 20px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            position: relative;
+            z-index: 5;
+        }
+
+        /* Scroll Animasyonu Sınıfı */
+        .reveal-box {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .reveal-box.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Duyuru Kutusu */
+        .announcement-box {
+            width: 100%;
+            max-width: 1100px;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.06);
+            border: 1px solid #eee;
+            position: relative;
+        }
+        .announcement-logo-side img {
+            width: 110px;
+            height: auto;
+            transition: all 0.4s ease;
+        }
+        .announcement-box:hover .announcement-logo-side img {
+            transform: scale(1.15) rotate(5deg);
+            filter: drop-shadow(0 0 15px rgba(255,215,0,0.6));
+        }
+        .announcement-text-side {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .announcement-text-side h2 {
+            color: #111111; 
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+        .announcement-text-side p {
+            color: #777777; 
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .announcement-meta {
+            font-size: 0.9rem;
+            color: #bbb;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+        .badge-announcement {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #f1f1f1;
+            color: #444;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* İçi Sarı Eğlence Kutusu */
+        .yellow-join-box {
+            width: 100%;
+            max-width: 1100px;
+            background: linear-gradient(135deg, #FFD700, #ffb300);
+            border-radius: 20px;
+            padding: 35px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 12px 35px rgba(255, 215, 0, 0.25);
+        }
+        .yellow-join-left {
+            color: #ffffff;
+        }
+        .yellow-join-left h3 {
+            font-size: 1.7rem;
+            font-weight: 900;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .yellow-join-left p {
+            font-size: 1.05rem;
+            font-weight: 600;
+            opacity: 0.95;
+        }
+        .yellow-join-right {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-yellow-play {
+            background: #ffffff;
+            color: #ffb300;
+            font-weight: 800;
+            font-size: 1.1rem;
+            padding: 14px 35px;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .btn-yellow-play:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.15);
+            color: #111;
+        }
+        .yellow-join-right span {
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-decoration: underline;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+        .yellow-join-right span:hover {
+            opacity: 1;
+        }
+
+        /* Aksiyon Alanı */
+        .action-container {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 1100px;
+        }
+        .shop-box {
+            flex: 1.3;
+            background: #f9f9f9;
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            border: 1px solid #eee;
+        }
+        .btn-shop {
+            background: #FFD700;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.1rem;
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+        }
+        .btn-shop:hover {
+            background: #ffb300;
+            transform: translateY(-2px);
+        }
+        .shop-text-content h4 { font-size: 1.3rem; font-weight: 800; }
+        .shop-text-content p { color: #777; font-weight: 600; font-size: 0.95rem; }
+
+        .play-card {
+            flex: 0.9;
+            background: #1e1e1e;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            min-height: 122px;
+        }
+        .play-content {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        .play-title { font-size: 1.6rem; font-weight: 900; letter-spacing: 2px; }
+        .gamepad-icon { font-size: 2.2rem; color: #FFD700; transition: all 0.4s ease; }
+        .play-card::before {
+            content: ''; position: absolute; top: 0; right: 0; width: 0; height: 100%;
+            background: #FFD700; transition: width 0.4s ease; z-index: 1;
+        }
+        .play-card:hover::before { width: 100%; left: 0; right: auto; }
+        .play-card:hover .play-title { color: #111; }
+        .play-card:hover .gamepad-icon { transform: scale(1.25); color: #fff; }
+
+
+        /* ================== MAĞAZA ALANI ================== */
+        .store-layer {
+            background: #fcfcfc;
+            padding: 80px 20px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 35px;
+            position: relative;
+            z-index: 5;
+            border-top: 1px solid #eee;
+        }
+
+        .store-title-wrapper {
+            text-align: center;
+            max-width: 700px;
+        }
+        .store-title-wrapper h1 {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #111;
+            margin-bottom: 10px;
+        }
+        .store-title-wrapper p {
+            color: #777;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+
+        .categories-bar {
+            display: flex;
+            gap: 15px;
+            max-width: 1100px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .category-tab {
+            background: #ffffff;
+            color: #444;
+            padding: 12px 25px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #ddd;
+        }
+        .category-tab:hover, .category-tab.active {
+            background: #FFD700;
+            color: #111;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+            border-color: #FFD700;
+        }
+
+        .products-grid {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+        }
+        .product-card {
+            background: #ffffff;
+            border: 1px solid #eee;
+            border-radius: 20px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            transition: all 0.3s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.08);
+            border-color: #FFD700;
+        }
+        .product-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #FFD700, #ffb300);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.2);
+        }
+        .product-card h3 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #111;
+            margin-bottom: 8px;
+        }
+        .product-card p {
+            font-size: 0.95rem;
+            color: #777;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #2e7d32;
+            margin-bottom: 20px;
+        }
+        .btn-buy {
+            width: 100%;
+            background: #111;
+            color: #fff;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: block;
+        }
+        .btn-buy:hover {
+            background: #FFD700;
+            color: #111;
+        }
+
+
+        /* ================== HİLE KONTROL / GÜVENLİK ALANI ================== */
+        .security-layer {
+            background: #ffffff;
+            padding: 80px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 35px;
+            position: relative;
+            z-index: 5;
+            border-top: 1px solid #eee;
+        }
+        .security-container {
+            width: 100%;
+            max-width: 1100px;
+            background: #111111;
+            color: #ffffff;
+            border-radius: 24px;
+            padding: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            border: 2px solid #FFD700;
+            overflow: hidden;
+            position: relative;
+        }
+        /* Arka Plan Tarama Çizgisi Efekti */
+        .security-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(255,215,0,0) 0%, rgba(255,215,0,0.03) 50%, rgba(255,215,0,0) 100%);
+            animation: scanLine 4s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scanLine {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        .security-info {
+            flex: 1.3;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .security-info h2 {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #FFD700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .security-info p {
+            color: #cccccc;
+            font-weight: 600;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+        .security-steps {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .step-card {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 15px;
+            border-radius: 12px;
+            flex: 1;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+        }
+        .step-card:hover {
+            background: rgba(255, 215, 0, 0.08);
+            border-color: #FFD700;
+            transform: translateY(-3px);
+        }
+        .step-card i {
+            font-size: 1.8rem;
+            color: #FFD700;
+            margin-bottom: 8px;
+        }
+        .step-card h5 {
+            font-size: 0.95rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .step-card p {
+            font-size: 0.8rem;
+            color: #aaaaaa;
+        }
+        .security-action {
+            flex: 0.7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            min-width: 280px;
+        }
+        .btn-download {
+            background: #FFD700;
+            color: #111111;
+            font-weight: 900;
+            font-size: 1.2rem;
+            padding: 18px 35px;
+            border-radius: 15px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(255,215,0,0.3);
+            transition: all 0.3s ease;
+            width: 100%;
+            justify-content: center;
+            animation: pulseGlow 2.5s infinite;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 10px 25px rgba(255,215,0,0.2); }
+            50% { box-shadow: 0 10px 35px rgba(255,215,0,0.5); transform: scale(1.02); }
+            100% { box-shadow: 0 10px 25px rgba(255,215,0,0.2); }
+        }
+        .btn-download:hover {
+            background: #ffffff;
+            color: #111111;
+            animation: none;
+            transform: translateY(-3px);
+        }
+        .security-badge {
+            font-size: 0.85rem;
+            color: #2e7d32;
+            font-weight: 700;
+            background: rgba(46, 125, 50, 0.15);
+            padding: 6px 15px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+
+        /* ================== PRE-FOOTER ================== */
+        .pre-footer {
+            background-color: #ffffff;
+            padding: 60px 50px;
+            display: flex;
+            justify-content: center;
+            border-top: 1px solid #eeeeee;
+            border-bottom: 1px solid #eeeeee;
+        }
+        .pre-footer-container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+        .pf-brand-side {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .pf-brand-side h2 {
+            color: #FFD700; 
+            font-size: 1.6rem;
+            font-weight: 900;
+        }
+        .pf-brand-side p {
+            color: #666666; 
+            font-size: 0.95rem;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+        .lang-selector-wrapper { position: relative; margin-top: 10px; }
+        .btn-lang {
+            background: #FFD700;
+            color: #111;
+            font-weight: 800;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        .btn-lang:hover { background: #ffb300; }
+        .lang-dropdown {
+            display: none;
+            position: absolute;
+            bottom: 45px;
+            left: 0;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            z-index: 50;
+            min-width: 140px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .lang-dropdown div {
+            color: #333333;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .lang-dropdown div:hover { background: #FFD700; color: #ffffff; }
+
+        .pf-links-side h4 {
+            color: #111111; 
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        .pf-links-side ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .pf-links-side ul li a {
+            color: #666666; 
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+        .pf-links-side ul li a:hover { color: #FFD700; }
+
+        /* ================== FOOTER ================== */
+        .footer {
+            background-color: #FFD700; 
+            padding: 35px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
+        .footer p {
+            color: #666666; 
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .footer p span.brand-white {
+            color: #ffffff; 
+            font-weight: 900;
+        }
+        .btn-developer {
+            background-color: #111111;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 0.9rem;
+            padding: 10px 22px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn-developer:hover {
+            transform: scale(1.05);
+            background-color: #222222;
+        }
+
+        /* ================== ÇEREZ BİLDİRİMİ (YENİ) ================== */
+        .cookie-banner {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ffffff;
+            border-left: 5px solid #FFD700;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            padding: 20px 25px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 9999;
+            transform: translateY(150%);
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 420px;
+        }
+        .cookie-banner.show {
+            transform: translateY(0);
+        }
+        .cookie-icon {
+            font-size: 2rem;
+            color: #d3a13b;
+        }
+        .cookie-content p {
+            font-size: 0.9rem;
+            color: #444;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+        .btn-accept-cookie {
+            background: #111;
+            color: #FFD700;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        .btn-accept-cookie:hover {
+            background: #FFD700;
+            color: #111;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 900px) {
+            .pre-footer-container { grid-template-columns: 1fr 1fr; }
+            .hero-row { flex-direction: column; gap: 40px; }
+            .logo-container { margin-bottom: -50px; order: 1; }
+            .mc-box { order: 2; text-align: center; justify-content: center; margin-top: 0; }
+            .discord-box { order: 3; text-align: center; justify-content: center; flex-direction: row; margin-top: 0; }
+            .action-container, .announcement-box, .yellow-join-box, .security-container, .security-steps { flex-direction: column; }
+            .blobs-container { display: none; }
+        }
+
+        @media (max-width: 600px) {
+            .cookie-banner {
+                bottom: 15px;
+                right: 15px;
+                left: 15px;
+                max-width: none;
+                flex-direction: column;
+                text-align: center;
+                border-left: none;
+                border-top: 5px solid #FFD700;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Minecraft Piksel Yaprak Yağmuru -->
+    <div class="leaves-container" id="leaves"></div>
+
+    <!-- Üst Sarı Platform -->
+    <div class="yellow-platform" id="home">
+        
+        <!-- Yükselen Baloncuklar -->
+        <div class="bubbles-wrapper" id="bubbles"></div>
+        
+        <!-- Şeffaf Arkaplan Yazısı -->
+        <div class="bg-text">GOLDENNW</div>
+        
+        <!-- Beyaz ve Sarı Sabit Baloncuklar -->
+        <div class="blobs-container">
+            <div class="blob-white"></div>
+            <div class="blob-yellow"></div>
+        </div>
+        
+        <!-- Üst Menü -->
+        <nav class="navbar">
+            <div class="nav-links">
+                <a href="#home" class="active" data-tr="Anasayfa" data-en="Home">Anasayfa</a>
+                <a href="#store" data-tr="Mağaza" data-en="Store">Mağaza</a>
+                <a href="#security" data-tr="Hile Kontrol Dosyası" data-en="Cheat Control File">Hile Kontrol Dosyası</a>
+            </div>
+            
+            <div class="auth-buttons">
+                <a href="#" class="btn-login" title="Giriş Yap" onclick="showYakinda(event)"><i class="fas fa-sign-in-alt"></i></a>
+                <a href="#" class="btn-register" onclick="showYakinda(event)" data-tr="Kayıt Ol" data-en="Register">Kayıt Ol</a>
+            </div>
+        </nav>
+
+        <!-- Sunucu Tanıtım / Hero Satırı -->
+        <div class="hero-container">
+            <div class="hero-row">
+                <!-- SOL: Sunucu IP -->
+                <div class="info-box mc-box" onclick="copyIP()">
+                    <i class="fas fa-crown"></i>
+                    <div>
+                        <h3>oyna.goldennw.com</h3>
+                        <div class="flip-text-container">
+                            <span class="flip-text" id="mc-count" data-tr="Yükleniyor..." data-en="Loading...">Yükleniyor...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ORTA: LOGO (Her Zaman Sunucu Logosu) -->
+                <div class="logo-container">
+                    <img src="swlogo.png" alt="Golden Network Logo">
+                </div>
+
+                <!-- SAĞ: Discord Güncel Link -->
+                <div class="info-box discord-box" onclick="window.open('https://discord.gg/MuU3ZE8W2m', '_blank')">
+                    <i class="fab fa-discord"></i>
+                    <div>
+                        <h3 data-tr="Discord'a Katıl" data-en="Join Discord">Discord'a Katıl</h3>
+                        <div class="flip-text-container">
+                            <span class="flip-text" id="dc-count" data-tr="Yükleniyor..." data-en="Loading...">Yükleniyor...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alt Beyaz Alan -->
+    <div class="white-layer">
+        
+        <!-- Sunucu Açılış Duyurusu -->
+        <div class="announcement-box reveal-box">
+            <div class="announcement-logo-side">
+                <img src="swlogo.png" alt="Mini Logo">
+            </div>
+            <div class="announcement-text-side">
+                <h2 data-tr="GoldenNetwork Açılıyor!" data-en="GoldenNetwork is Opening!">GoldenNetwork Açılıyor!</h2>
+                <p data-tr="GoldenNetwork bugün akşam saat 20:00'da açılıyor...." data-en="GoldenNetwork opens tonight at 20:00....">GoldenNetwork bugün akşam saat 20:00'da açılıyor....</p>
+                <div class="announcement-meta">
+                    <i class="fas fa-eye"></i> 1,245 &nbsp;&bull;&nbsp; <i class="fas fa-calendar-alt"></i> 24.06.2026 14:00
+                </div>
+            </div>
+            <div class="badge-announcement" data-tr="Duyurular" data-en="Announcements">Duyurular</div>
+        </div>
+
+        <!-- Eğlence Kutusu -->
+        <div class="yellow-join-box reveal-box">
+            <div class="yellow-join-left">
+                <h3 data-tr="GoldenNetwork ile eğlenceye katıl!" data-en="Join the fun with GoldenNetwork!">GoldenNetwork ile eğlenceye katıl!</h3>
+                <p data-tr="Minecraft eğlenceni GoldenNetwork ile ikiye katla." data-en="Double your Minecraft fun with GoldenNetwork.">Minecraft eğlenceni GoldenNetwork ile ikiye katla.</p>
+            </div>
+            <div class="yellow-join-right">
+                <button class="btn-yellow-play" onclick="copyIP()">
+                    <i class="fas fa-gamepad"></i> <span style="color:inherit; font-weight:inherit; text-decoration:none;" data-tr="Oyna" data-en="Play">Oyna</span>
+                </button>
+                <span onclick="showYakinda(event)" data-tr="veya Kayıt Ol" data-en="or Register">veya Kayıt Ol</span>
+            </div>
+        </div>
+
+        <!-- Hızlı Mağaza & Oyna Kartları -->
+        <div class="action-container reveal-box">
+            <div class="shop-box">
+                <button class="btn-shop" onclick="window.location.href='#store'">
+                    <span data-tr="Mağaza" data-en="Store">Mağaza</span> <i class="fas fa-arrow-right"></i>
+                </button>
+                <div class="shop-text-content">
+                    <h4 data-tr="Mağazayı gezmek ister misin?" data-en="Want to browse the store?">Mağazayı gezmek ister misin?</h4>
+                    <p data-tr="Oyunu lehine çevirecek mağazadaki eşyaları satın al." data-en="Purchase items from the store to turn the game in your favor.">Oyunu lehine çevirecek mağazadaki eşyaları satın al.</p>
+                </div>
+            </div>
+
+            <div class="play-card" onclick="copyIP()">
+                <div class="play-content">
+                    <span class="play-title" data-tr="OYNA" data-en="PLAY">OYNA</span>
+                    <i class="fas fa-gamepad gamepad-icon"></i>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================== MAĞAZA ALANI ================== -->
+    <div class="store-layer" id="store">
+        <div class="store-title-wrapper">
+            <h1 data-tr="GoldenNetwork Sunucu Mağazası" data-en="GoldenNetwork Server Store">GoldenNetwork Sunucu Mağazası</h1>
+            <p data-tr="Oyun keyfinizi artıracak avantajlı üyelik ve ürünleri buradan güvenle satın alabilirsiniz." data-en="You can safely purchase advantageous memberships and products to boost your gaming fun here.">Oyun keyfinizi artıracak avantajlı üyelik ve ürünleri buradan güvenle satın alabilirsiniz.</p>
+        </div>
+
+        <!-- Kategori Butonları -->
+        <div class="categories-bar">
+            <div class="category-tab active" onclick="filterCategory('all')" data-tr="Tüm Ürünler" data-en="All Products">Tüm Ürünler</div>
+            <div class="category-tab" onclick="filterCategory('vip')" data-tr="VIP'ler" data-en="VIPs">VIP'ler</div>
+            <div class="category-tab" onclick="filterCategory('kasa')" data-tr="Kasalar" data-en="Crates">Kasalar</div>
+        </div>
+
+        <!-- Ürünler Listesi -->
+        <div class="products-grid">
+            
+            <!-- VIP ÜRÜNLERİ -->
+            <div class="product-card vip">
+                <div class="product-icon"><i class="fas fa-rocket"></i></div>
+                <h3>Booster</h3>
+                <p data-tr="Sunucuya destek çıkın, özel yazı renkleri ve ekstra haklar kazanın!" data-en="Support the server, get unique text colors and extra perks!">Sunucuya destek çıkın, özel yazı renkleri ve ekstra haklar kazanın!</p>
+                <!-- Booster Fiyatı Güncellendi (500 TL) -->
+                <div class="product-price">500 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <div class="product-card vip">
+                <div class="product-icon"><i class="fas fa-star"></i></div>
+                <h3>VIP</h3>
+                <p data-tr="VIP ayrıcalıkları ve özel başlangıç kiti!" data-en="VIP privileges and a special starter kit!">VIP ayrıcalıkları ve özel başlangıç kiti!</p>
+                <div class="product-price">50 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <div class="product-card vip">
+                <div class="product-icon"><i class="fas fa-star-half-alt"></i></div>
+                <h3>GVIP</h3>
+                <p data-tr="Gelişmiş VIP avantajları ve ekstra ödüller." data-en="Advanced VIP benefits and extra rewards.">Gelişmiş VIP avantajları ve ekstra ödüller.</p>
+                <div class="product-price">75 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <div class="product-card vip">
+                <div class="product-icon"><i class="fas fa-crown"></i></div>
+                <h3>Golden VIP</h3>
+                <p data-tr="Sarı isim tagı, özel yetkiler ve doluyken giriş hakkı." data-en="Yellow name tag, special permissions, and bypass full server slots.">Sarı isim tagı, özel yetkiler ve doluyken giriş hakkı.</p>
+                <div class="product-price">100 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <div class="product-card vip">
+                <div class="product-icon"><i class="fas fa-gem"></i></div>
+                <h3>Golden VIP+</h3>
+                <p data-tr="Sunucudaki sınırları zorlayan en prestijli üyelik paketi!" data-en="The most prestigious membership package that pushes the limits!">Sunucudaki sınırları zorlayan en prestijli üyelik paketi!</p>
+                <div class="product-price">150 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <!-- KASALAR -->
+            <div class="product-card kasa">
+                <div class="product-icon"><i class="fas fa-coins"></i></div>
+                <h3>Para Kasası Anahtarı</h3>
+                <p data-tr="Şansınıza bağlı olarak muazzam miktarda oyun içi para kazanın!" data-en="Win massive amounts of in-game money depending on your luck!">Şansınıza bağlı olarak muazzam miktarda oyun içi para kazanın!</p>
+                <div class="product-price">50 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <div class="product-card kasa">
+                <div class="product-icon"><i class="fas fa-tools"></i></div>
+                <h3>Alet Kasası Anahtarı</h3>
+                <p data-tr="Efsanevi hızda kazmalar, baltalar ve işlevsel aletler çıkarma şansı!" data-en="Chance to unlock legendary tools, pickaxes, axes and more!">Efsanevi hızda kazmalar, baltalar ve işlevsel aletler çıkarma şansı!</p>
+                <div class="product-price">65 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <div class="product-card kasa">
+                <div class="product-icon"><i class="fas fa-gift"></i></div>
+                <h3>Kit Kasası Anahtarı</h3>
+                <p data-tr="Güçlü zırhlar, kılıçlar ve efsanevi kitleri çıkarma şansı." data-en="Chance to unlock powerful armors, swords, and legendary kits.">Güçlü zırhlar, kılıçlar ve efsanevi kitleri çıkarma şansı.</p>
+                <div class="product-price">75 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <div class="product-card kasa">
+                <div class="product-icon"><i class="fas fa-calendar-stars"></i></div>
+                <h3>Event Kasası Anahtarı</h3>
+                <p data-tr="Etkinliklere özel efsanevi ödüller barındıran harika bir kasa!" data-en="An amazing crate containing legendary rewards exclusive to events!">Etkinliklere özel efsanevi ödüller barındıran harika bir kasa!</p>
+                <div class="product-price">75 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+            <div class="product-card kasa">
+                <div class="product-icon"><i class="fas fa-key"></i></div>
+                <h3>Golden Kasası Anahtarı</h3>
+                <p data-tr="Sunucudaki en nadir ve efsanevi eşyaların bulunduğu kasa!" data-en="The crate containing the rarest and most legendary items on the server!">Sunucudaki en nadir ve efsanevi eşyaların bulunduğu kasa!</p>
+                <div class="product-price">100 TL</div>
+                <a href="https://discord.gg/MuU3ZE8W2m" class="btn-buy" target="_blank" data-tr="Satın Al" data-en="Buy Now">Satın Al</a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================== HİLE KONTROL / GÜVENLİK SAYFASI ================== -->
+    <div class="security-layer" id="security">
+        <div class="security-container reveal-box">
+            <div class="security-info">
+                <h2><i class="fas fa-shield-alt"></i> <span data-tr="GoldenNW Güvenlik Sistemi" data-en="GoldenNW Security System">GoldenNW Güvenlik Sistemi</span></h2>
+                <p data-tr="Adil ve hilesiz bir oyun deneyimi için kendi geliştirdiğimiz hile kontrol uygulamasını bilgisayarınıza indirin. Tek tıkla bilgisayarınızı taratıp güvenliğinizi onaylayabilirsiniz." data-en="Download our custom-developed cheat control application to your computer for a fair and cheat-free gaming experience. Verify your safety with just a single click scan.">Adil ve hilesiz bir oyun deneyimi için kendi geliştirdiğimiz hile kontrol uygulamasını bilgisayarınıza indirin. Tek tıkla bilgisayarınızı taratıp güvenliğinizi onaylayabilirsiniz.</p>
+                
+                <div class="security-steps">
+                    <div class="step-card">
+                        <i class="fas fa-download"></i>
+                        <h5 data-tr="1. İndir" data-en="1. Download">1. İndir</h5>
+                        <p data-tr="Güvenli .exe dosyasını bilgisayarına indir." data-en="Download the safe .exe file onto your PC.">Güvenli .exe dosyasını bilgisayarına indir.</p>
+                    </div>
+                    <div class="step-card">
+                        <i class="fas fa-running"></i>
+                        <h5 data-tr="2. Çalıştır" data-en="2. Run">2. Çalıştır</h5>
+                        <p data-tr="Uygulamayı kurulum yapmadan hemen aç." data-en="Open the application without any complex installation.">Uygulamayı kurulum yapmadan hemen aç.</p>
+                    </div>
+                    <div class="step-card">
+                        <i class="fas fa-search"></i>
+                        <h5 data-tr="3. Tarat" data-en="3. Scan">3. Tarat</h5>
+                        <p data-tr="Arka plandaki hile kalıntılarını anında temizle." data-en="Instantly scan and detect background cheat remnants.">Arka plandaki hile kalıntılarını anında temizle.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="security-action">
+                <a href="https://dosya.co/swxo1fctn5v2/GoldenNW_Security.exe.html" target="_blank" class="btn-download">
+                    <i class="fas fa-cloud-download-alt"></i> <span data-tr="Uygulamayı İndir (.EXE)" data-en="Download App (.EXE)">Uygulamayı İndir (.EXE)</span>
+                </a>
+                <div class="security-badge">
+                    <i class="fas fa-check-circle"></i> <span data-tr="Güvenli & Virüssüz" data-en="Safe & Virus Free">Güvenli & Virüssüz</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================== PRE-FOOTER ================== -->
+    <div class="pre-footer">
+        <div class="pre-footer-container">
+            
+            <div class="pf-brand-side">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="swlogo.png" alt="Logo" style="width: 45px; height: auto;">
+                    <h2>GoldenNetwork</h2>
+                </div>
+                <p data-tr="Yüksek kaliteli sunuculara ve arkadaş canlısı topluluğa sahip bir Minecraft sunucusu!" data-en="A Minecraft server with high quality servers and a friendly community!">Yüksek kaliteli sunuculara ve arkadaş canlısı topluluğa sahip bir Minecraft sunucusu!</p>
+                <p style="font-size: 0.8rem; opacity: 0.6; color:#999;">GoldenNetwork is not affiliated with Mojang AB.</p>
+                
+                <div class="lang-selector-wrapper">
+                    <button class="btn-lang" onclick="toggleLangMenu()">
+                        <i class="fas fa-globe"></i> <span id="current-lang-label">Türkçe</span>
+                    </button>
+                    <div class="lang-dropdown" id="langDropdown">
+                        <div onclick="setLanguage('tr')">Türkçe</div>
+                        <div onclick="setLanguage('en')">English</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pf-links-side">
+                <h4 data-tr="Hızlı Menü" data-en="Quick Menu">Hızlı Menü</h4>
+                <ul>
+                    <li><a href="#home" data-tr="Anasayfa" data-en="Home">Anasayfa</a></li>
+                    <li><a href="#store" data-tr="Mağaza" data-en="Store">Mağaza</a></li>
+                    <li><a href="#security" data-tr="Hile Kontrolü" data-en="Cheat Control">Hile Kontrolü</a></li>
+                </ul>
+            </div>
+
+            <div class="pf-links-side">
+                <h4 data-tr="Sosyal Medya" data-en="Social Media">Sosyal Medya</h4>
+                <ul>
+                    <li><a href="https://www.tiktok.com/@hzarceus" target="_blank">TikTok</a></li>
+                    <li><a href="https://discord.gg/MuU3ZE8W2m" target="_blank">Discord</a></li>
+                </ul>
+            </div>
+
+            <div class="pf-links-side">
+                <h4 data-tr="Bağlantılar" data-en="Links">Bağlantılar</h4>
+                <ul>
+                    <li><a href="#" data-tr="Hizmet Şartları" data-en="Terms of Service">Hizmet Şartları</a></li>
+                    <li><a href="#" data-tr="Gizlilik Politikası" data-en="Privacy Policy">Gizlilik Politikası</a></li>
+                    <li><a href="#" data-tr="İletişim" data-en="Contact">İletişim</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================== FOOTER ================== -->
+    <footer class="footer">
+        <p data-tr="Copyright Tüm hakları saklıdır. &copy; 2026" data-en="Copyright All rights reserved. &copy; 2026">
+            Copyright <span class="brand-white">GoldenNetwork</span> Tüm hakları saklıdır. &copy; 2026
+        </p>
+        <a href="https://discord.com/users/waffenxc" target="_blank" class="btn-developer">
+            <i class="fab fa-discord"></i> developer waffen xc
+        </a>
+    </footer>
+
+    <!-- ================== ÇEREZ BİLDİRİMİ KUTUSU ================== -->
+    <div class="cookie-banner" id="cookieBanner">
+        <i class="fas fa-cookie-bite cookie-icon"></i>
+        <div class="cookie-content">
+            <p data-tr="Size daha iyi bir deneyim sunabilmek için sitemizde çerezler kullanıyoruz. Kullanıma devam ederek bunu kabul etmiş sayılırsınız." data-en="We use cookies on our site to provide you with a better experience. By continuing to use, you agree to this.">Size daha iyi bir deneyim sunabilmek için sitemizde çerezler kullanıyoruz. Kullanıma devam ederek bunu kabul etmiş sayılırsınız.</p>
+        </div>
+        <button class="btn-accept-cookie" onclick="acceptCookies()" data-tr="Kabul Et" data-en="Accept">Kabul Et</button>
+    </div>
+
+    <script>
+        // Menü Geçişlerinde Aktif Sınıf Yönetimi
+        const navLinks = document.querySelectorAll('.nav-links a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                navLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Ürün Filtreleme Scripti
+        function filterCategory(category) {
+            const tabs = document.querySelectorAll('.category-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            if(event) {
+                event.target.classList.add('active');
+            }
+
+            const products = document.querySelectorAll('.product-card');
+            products.forEach(product => {
+                if (category === 'all') {
+                    product.style.display = 'flex';
+                } else if (product.classList.contains(category)) {
+                    product.style.display = 'flex';
+                } else {
+                    product.style.display = 'none';
+                }
+            });
+        }
+
+        // Yükselen Baloncuklar
+        const bubblesContainer = document.getElementById('bubbles');
+        for (let i = 0; i < 20; i++) {
+            let bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            bubble.style.left = Math.random() * 100 + 'vw';
+            bubble.style.width = Math.random() * 20 + 10 + 'px';
+            bubble.style.height = bubble.style.width;
+            bubble.style.animationDuration = Math.random() * 3 + 4 + 's';
+            bubble.style.animationDelay = Math.random() * 2 + 's';
+            bubblesContainer.appendChild(bubble);
+        }
+
+        // Minecraft Yaprak Yağmuru
+        const leavesContainer = document.getElementById('leaves');
+        for (let i = 0; i < 20; i++) {
+            let leaf = document.createElement('div');
+            leaf.className = 'leaf';
+            leaf.style.left = Math.random() * 100 + 'vw';
+            leaf.style.animationDuration = Math.random() * 8 + 10 + 's';
+            leaf.style.animationDelay = Math.random() * 8 + 's';
+            let scale = Math.random() * 0.4 + 0.8;
+            leaf.style.transform = `scale(${scale})`;
+            leavesContainer.appendChild(leaf);
+        }
+
+        // Scroll Animasyonu
+        const revealBoxes = document.querySelectorAll('.reveal-box');
+        function checkReveal() {
+            const triggerBottom = window.innerHeight / 5 * 4;
+            revealBoxes.forEach(box => {
+                const boxTop = box.getBoundingClientRect().top;
+                if(boxTop < triggerBottom) {
+                    box.classList.add('active');
+                }
+            });
+        }
+        window.addEventListener('scroll', checkReveal);
+        checkReveal();
+
+        // IP Kopyalama
+        function copyIP() {
+            navigator.clipboard.writeText("oyna.goldennw.com");
+            Swal.fire({
+                title: currentLanguage === 'tr' ? 'Başarılı!' : 'Success!',
+                text: currentLanguage === 'tr' ? 'Sunucu adresi kopyalandı.' : 'Server address copied.',
+                icon: 'success',
+                confirmButtonColor: '#ffb300'
+            });
+        }
+
+        // Yakında Pencereleri
+        function showYakinda(event) {
+            event.preventDefault();
+            Swal.fire({
+                title: currentLanguage === 'tr' ? 'Çok Yakında!' : 'Coming Soon!',
+                text: currentLanguage === 'tr' ? 'Bu özellik henüz aktif edilmemiştir.' : 'This feature is not active yet.',
+                icon: 'info',
+                confirmButtonText: currentLanguage === 'tr' ? 'Tamam' : 'OK',
+                confirmButtonColor: '#FFD700'
+            });
+        }
+
+        // Dil Değiştirme Sistemi
+        let currentLanguage = 'tr';
+        function toggleLangMenu() {
+            const dropdown = document.getElementById('langDropdown');
+            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.getElementById('langDropdown').style.display = 'none';
+            document.getElementById('current-lang-label').innerText = lang === 'tr' ? 'Türkçe' : 'English';
+            
+            const elements = document.querySelectorAll('[data-tr]');
+            elements.forEach(el => {
+                if(lang === 'tr') {
+                    el.innerText = el.getAttribute('data-tr');
+                } else {
+                    el.innerText = el.getAttribute('data-en');
+                }
+            });
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.btn-lang') && !event.target.matches('.btn-lang *')) {
+                const dropdown = document.getElementById('langDropdown');
+                if(dropdown) dropdown.style.display = 'none';
+            }
+        }
+
+        // Çerez Onay Sistemi (Yeni)
+        document.addEventListener("DOMContentLoaded", () => {
+            const cookieAccepted = localStorage.getItem("cookiesAccepted");
+            if (!cookieAccepted) {
+                // Sitede gezinmeye başladıktan 1.5 saniye sonra çıksın
+                setTimeout(() => {
+                    document.getElementById("cookieBanner").classList.add("show");
+                }, 1500);
+            }
+        });
+
+        function acceptCookies() {
+            localStorage.setItem("cookiesAccepted", "true");
+            document.getElementById("cookieBanner").classList.remove("show");
+        }
+
+        // API Çekimi
+        fetch('https://api.mcsrvstat.us/2/oyna.goldennw.com')
+            .then(response => response.json())
+            .then(data => {
+                const mcCountText = document.getElementById('mc-count');
+                if (data.online) {
+                    mcCountText.innerText = data.players.online + ' Oyuncu Aktif';
+                    mcCountText.setAttribute('data-tr', data.players.online + ' Oyuncu Aktif');
+                    mcCountText.setAttribute('data-en', data.players.online + ' Players Online');
+                } else {
+                    mcCountText.innerText = 'Sunucu Çevrimdışı';
+                    mcCountText.setAttribute('data-tr', 'Sunucu Çevrimdışı');
+                    mcCountText.setAttribute('data-en', 'Server Offline');
+                }
+            })
+            .catch(() => { });
+
+        setTimeout(() => {
+            let fakeOnline = Math.floor(Math.random() * 20) + 180;
+            const dcText = document.getElementById('dc-count');
+            dcText.innerText = fakeOnline + ' Üye Aktif';
+            dcText.setAttribute('data-tr', fakeOnline + ' Üye Aktif');
+            dcText.setAttribute('data-en', fakeOnline + ' Members Online');
+        }, 500);
+    </script>
+</body>
+</html>
